@@ -4,23 +4,7 @@
 #include <QMainWindow>
 #include <QtWidgets>
 #include <QImage>
-#include <QThread>
 #include "clabel.h"
-
-class LvglThread : public QThread
-{
-    Q_OBJECT
-public:
-    explicit LvglThread(QObject *parent = nullptr);
-
-protected:
-    void run();
-
-signals:
-
-private slots:
-
-};
 
 class MainWindow : public QMainWindow
 {

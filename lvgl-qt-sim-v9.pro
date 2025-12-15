@@ -8,11 +8,18 @@ CONFIG += c++17
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+DEFINES += LV_CONF_INCLUDE_SIMPLE
+
 INCLUDEPATH += \
   ./lvgl \
+  ./app \
+  ./hal \
 
 SOURCES += \
-    clabel.cpp \
+    app/app_ui.c \
+    app/mainwindow.cpp \
+    hal/clabel.cpp \
+    hal/lvgl_hal.cpp \
     lvgl/demos/benchmark/assets/img_benchmark_avatar.c \
     lvgl/demos/benchmark/assets/img_benchmark_cogwheel_alpha256.c \
     lvgl/demos/benchmark/assets/img_benchmark_cogwheel_argb.c \
@@ -699,12 +706,14 @@ SOURCES += \
     lvgl/src/widgets/textarea/lv_textarea.c \
     lvgl/src/widgets/tileview/lv_tileview.c \
     lvgl/src/widgets/win/lv_win.c \
-    main.cpp \
-    mainwindow.cpp
+    main.cpp
 
 HEADERS += \
-    clabel.h \
-    lv_conf.h \
+    app/app_ui.h \
+    app/lv_conf.h \
+    app/mainwindow.h \
+    hal/clabel.h \
+    hal/lvgl_hal.h \
     lvgl/demos/benchmark/lv_demo_benchmark.h \
     lvgl/demos/flex_layout/lv_demo_flex_layout.h \
     lvgl/demos/flex_layout/lv_demo_flex_layout_main.h \
@@ -1181,7 +1190,6 @@ HEADERS += \
     lvgl/src/widgets/tileview/lv_tileview_private.h \
     lvgl/src/widgets/win/lv_win.h \
     lvgl/src/widgets/win/lv_win_private.h \
-    mainwindow.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

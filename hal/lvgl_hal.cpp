@@ -1,41 +1,11 @@
-#include "mainwindow.h"
 #include "lvgl.h"
-#include "demos/lv_demos.h"
+#include "lvgl_hal.h"
+#include "app_ui.h"
 
 MainWindow * gMainObj;
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , display_image(LV_HOR_RES_MAX, LV_VER_RES_MAX, QImage::Format_RGB16)
-{
-    setWindowTitle("LVGL Qt Simulator");
-
-    // 创建一个顶层的widget
-    QWidget *widget = new QWidget();
-    this->setCentralWidget(widget);
-
-    lb_display = new ClickableLabel();
-    lb_display->setMaximumWidth(LV_HOR_RES_MAX);
-    lb_display->setMaximumHeight(LV_VER_RES_MAX);
-
-    // 垂直布局
-    QVBoxLayout *vLayout_1 = new QVBoxLayout();
-    vLayout_1->addWidget(lb_display);
-
-    widget->setLayout(vLayout_1);
-
-    gMainObj = this;
-
-    installEventFilter(this);
-    connect(lb_display, SIGNAL(mousePressed(int, int)), this, SLOT(onMousePressed(int, int)));
-    connect(lb_display, SIGNAL(mouseReleased(int, int)), this, SLOT(onMouseReleased(int, int)));
-
-    LvglThread *lvgl_thread = new LvglThread(this);
-    lvgl_thread->start();
-}
-
 //----------- C++ functions ---------
-static void updateDisplay (const lv_area_t * area, uint8_t * color_p, bool last)
+static void updateDisplay(const lv_area_t * area, uint8_t * color_p, bool last)
 {
     int32_t x, y;
     uint16_t *color_p_16 = (uint16_t *)color_p;
@@ -119,33 +89,6 @@ void hal_init()
     lv_indev_set_group(indev, lv_group_get_default());
 }
 
-void lv_example_btn_1(void)
-{
-    lv_obj_t * label;
-
-    lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
-    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
-
-    label = lv_label_create(btn1);
-    lv_label_set_text(label, "Button");
-    lv_obj_center(label);
-
-    lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
-    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 40);
-    lv_obj_add_flag(btn2, LV_OBJ_FLAG_CHECKABLE);
-    lv_obj_set_height(btn2, LV_SIZE_CONTENT);
-
-    label = lv_label_create(btn2);
-    lv_label_set_text(label, "Toggle");
-    lv_obj_center(label);
-}
-
-void lvgl_app_main(void)
-{
-    // lv_demo_music();
-    lv_example_btn_1();
-}
-
 #ifdef __cplusplus
 };
 #endif
@@ -162,46 +105,8 @@ void LvglThread::run()
 
     lvgl_app_main();
     while(1) {
-        lv_tick_inc(10);
+        lv_tick_inc(LVGL_TICK_TIME);
         lv_task_handler();
-        QThread::msleep(10);
+        QThread::msleep(LVGL_TICK_TIME);
     }
 }
-
-static int last_state = LV_INDEV_STATE_REL;
-
-void MainWindow::onMousePressed(int x, int y)
-{
-    qDebug("Mouse pressed %d, %d\n", x, y);
-    lv_integr_update_pointer(x, y, LV_INDEV_STATE_PR);
-    last_state = LV_INDEV_STATE_PR;
-}
-
-void MainWindow::onMouseReleased(int x, int y)
-{
-    printf("Mouse released %d, %d\n", x, y);
-    lv_integr_update_pointer(x, y, LV_INDEV_STATE_REL);
-    last_state = LV_INDEV_STATE_REL;
-}
-
-bool MainWindow::eventFilter(QObject *obj, QEvent *event)
-{
-  if (event->type() == QEvent::MouseMove)
-  {
-    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
-    statusBar()->showMessage(QString("Mouse move (%1,%2)").arg(mouseEvent->pos().x()).arg(mouseEvent->pos().y()));
-    int x = mouseEvent->pos().x();
-    int y = mouseEvent->pos().y();
-    printf("Mouse move %d, %d\n", x, y);
-    lv_integr_update_pointer(x, y, last_state);
-  }
-  return false;
-}
-
-void MainWindow::onMouseMoved(int x, int y)
-{
-    printf("Mouse released %d, %d\n", x, y);
-    lv_integr_update_pointer(x, y, last_state);
-}
-
-MainWindow::~MainWindow() {}

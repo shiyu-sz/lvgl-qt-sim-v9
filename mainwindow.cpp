@@ -26,6 +26,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     gMainObj = this;
 
+    installEventFilter(this);
+    connect(lb_display, SIGNAL(mousePressed(int, int)), this, SLOT(onMousePressed(int, int)));
+    connect(lb_display, SIGNAL(mouseReleased(int, int)), this, SLOT(onMouseReleased(int, int)));
+
     LvglThread *lvgl_thread = new LvglThread(this);
     lvgl_thread->start();
 }
@@ -63,6 +67,17 @@ extern "C" {
 uint8_t buf_1[BUFF_SIZE];
 uint8_t buf_2[BUFF_SIZE];
 
+static int touchpad_x = 0, touchpad_y = 0;
+static lv_indev_state_t touchpad_state = LV_INDEV_STATE_REL;
+static lv_indev_state_t touchpad_old_state = LV_INDEV_STATE_REL;
+
+void lv_integr_update_pointer(int x, int y, int state)
+{
+    touchpad_x = x;
+    touchpad_y = y;
+    touchpad_state = (lv_indev_state_t)state;
+}
+
 void disp_flush(lv_display_t * disp, const lv_area_t * area, uint8_t * px_map)
 {
     bool last = lv_disp_flush_is_last(disp);
@@ -70,11 +85,23 @@ void disp_flush(lv_display_t * disp, const lv_area_t * area, uint8_t * px_map)
     lv_disp_flush_ready(disp);         /* Indicate you are ready with the flushing*/
 }
 
+void touchpad_read(lv_indev_t * indev, lv_indev_data_t * data)
+{
+    Q_UNUSED(indev);
+    data->point.x = touchpad_x;
+    data->point.y = touchpad_y;
+    data->state = touchpad_state; //LV_INDEV_STATE_REL; //LV_INDEV_STATE_PR or LV_INDEV_STATE_REL;
+    if ( touchpad_state != touchpad_old_state) {
+        touchpad_old_state = touchpad_state;
+        qDebug("mouse down: x=%d y=%d", touchpad_x, touchpad_y);
+    }   /*No buffering now so no more data read*/
+}
+
 /**
  * Initialize the Hardware Abstraction Layer (HAL) for the LVGL graphics
  * library
  */
-lv_display_t * hal_init()
+void hal_init()
 {
     lv_display_t * disp;
     lv_group_set_default(lv_group_create());
@@ -84,16 +111,39 @@ lv_display_t * hal_init()
     lv_display_set_buffers(disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_default(disp);
 
-    // lv_indev_t * touchscreen = lv_gt911_touchscreen_create();
-    // lv_indev_set_display(touchscreen, disp);
-    // lv_indev_set_group(touchscreen, lv_group_get_default());
+    lv_indev_t * indev = lv_indev_create();
+    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(indev, touchpad_read);
+    lv_indev_set_mode(indev, LV_INDEV_MODE_TIMER);
+    lv_indev_set_display(indev, disp);
+    lv_indev_set_group(indev, lv_group_get_default());
+}
 
-    return disp;
+void lv_example_btn_1(void)
+{
+    lv_obj_t * label;
+
+    lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
+    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
+
+    label = lv_label_create(btn1);
+    lv_label_set_text(label, "Button");
+    lv_obj_center(label);
+
+    lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
+    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 40);
+    lv_obj_add_flag(btn2, LV_OBJ_FLAG_CHECKABLE);
+    lv_obj_set_height(btn2, LV_SIZE_CONTENT);
+
+    label = lv_label_create(btn2);
+    lv_label_set_text(label, "Toggle");
+    lv_obj_center(label);
 }
 
 void lvgl_app_main(void)
 {
-    lv_demo_music();
+    // lv_demo_music();
+    lv_example_btn_1();
 }
 
 #ifdef __cplusplus
@@ -109,13 +159,49 @@ void LvglThread::run()
 {
     lv_init();
     hal_init();
-    // init_pointer();
+
     lvgl_app_main();
     while(1) {
         lv_tick_inc(10);
         lv_task_handler();
         QThread::msleep(10);
     }
+}
+
+static int last_state = LV_INDEV_STATE_REL;
+
+void MainWindow::onMousePressed(int x, int y)
+{
+    qDebug("Mouse pressed %d, %d\n", x, y);
+    lv_integr_update_pointer(x, y, LV_INDEV_STATE_PR);
+    last_state = LV_INDEV_STATE_PR;
+}
+
+void MainWindow::onMouseReleased(int x, int y)
+{
+    printf("Mouse released %d, %d\n", x, y);
+    lv_integr_update_pointer(x, y, LV_INDEV_STATE_REL);
+    last_state = LV_INDEV_STATE_REL;
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+  if (event->type() == QEvent::MouseMove)
+  {
+    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    statusBar()->showMessage(QString("Mouse move (%1,%2)").arg(mouseEvent->pos().x()).arg(mouseEvent->pos().y()));
+    int x = mouseEvent->pos().x();
+    int y = mouseEvent->pos().y();
+    printf("Mouse move %d, %d\n", x, y);
+    lv_integr_update_pointer(x, y, last_state);
+  }
+  return false;
+}
+
+void MainWindow::onMouseMoved(int x, int y)
+{
+    printf("Mouse released %d, %d\n", x, y);
+    lv_integr_update_pointer(x, y, last_state);
 }
 
 MainWindow::~MainWindow() {}

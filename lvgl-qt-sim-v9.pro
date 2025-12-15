@@ -8,7 +8,11 @@ CONFIG += c++17
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+INCLUDEPATH += \
+  ./lvgl \
+
 SOURCES += \
+    clabel.cpp \
     lvgl/demos/benchmark/assets/img_benchmark_avatar.c \
     lvgl/demos/benchmark/assets/img_benchmark_cogwheel_alpha256.c \
     lvgl/demos/benchmark/assets/img_benchmark_cogwheel_argb.c \
@@ -699,6 +703,7 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    clabel.h \
     lv_conf.h \
     lvgl/demos/benchmark/lv_demo_benchmark.h \
     lvgl/demos/flex_layout/lv_demo_flex_layout.h \
@@ -756,6 +761,7 @@ HEADERS += \
     lvgl/examples/scroll/lv_example_scroll.h \
     lvgl/examples/styles/lv_example_style.h \
     lvgl/examples/widgets/lv_example_widgets.h \
+    lvgl/lvgl.h \
     lvgl/src/core/lv_global.h \
     lvgl/src/core/lv_group.h \
     lvgl/src/core/lv_group_private.h \

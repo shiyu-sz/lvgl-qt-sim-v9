@@ -11,6 +11,9 @@
  *    - add the path as include path
  */
 
+#define LV_HOR_RES_MAX (800)
+#define LV_VER_RES_MAX (480)
+
 /* clang-format off */
 #if 1 /*Set it to "1" to enable content*/
 
@@ -1082,7 +1085,7 @@
 #define LV_USE_DEMO_STRESS 0
 
 /*Music player demo*/
-#define LV_USE_DEMO_MUSIC 0
+#define LV_USE_DEMO_MUSIC 1
 #if LV_USE_DEMO_MUSIC
     #define LV_DEMO_MUSIC_SQUARE    0
     #define LV_DEMO_MUSIC_LANDSCAPE 0
